@@ -2,6 +2,14 @@
 
 A hands-on learning project for building a Retrieval-Augmented Generation (RAG) system with real-time evaluation capabilities. This project teaches students to create a complete RAG pipeline from document processing to interactive chat interface.
 
+## 📸 Screenshots
+
+The Streamlit chat UI in action against the indexed NASA corpus:
+
+![Chat UI – discovery + first answer](ScrenShot1.png)
+
+![Chat UI – RAGAS evaluation metrics](Screenshot2.png)
+
 ## 🎯 Learning Objectives
 
 By completing this project, students will learn to:

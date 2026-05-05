@@ -11,19 +11,6 @@ import os
 import json
 import pandas as pd
 
-# Load variables from a local .env file if one is present.
-# Resolve relative to this file so it works regardless of where Streamlit is launched from.
-try:
-    from pathlib import Path as _Path
-    from dotenv import load_dotenv
-    _env_path = _Path(__file__).resolve().parent / ".env"
-    if _env_path.exists():
-        load_dotenv(dotenv_path=_env_path, override=False)
-    else:
-        load_dotenv()
-except ImportError:
-    pass
-
 import ragas_evaluator
 import rag_client
 import llm_client
@@ -97,29 +84,24 @@ def display_evaluation_metrics(scores: Dict[str, float]):
     
     st.sidebar.subheader("📊 Response Quality")
     
-    import math as _math
     for metric_name, score in scores.items():
         if isinstance(score, (int, float)):
-            # Skip NaN / inf values that RAGAS can emit when an upstream call fails
-            if _math.isnan(score) or _math.isinf(score):
-                st.sidebar.metric(
-                    label=metric_name.replace('_', ' ').title(),
-                    value="n/a",
-                    delta=None,
-                )
-                continue
-
-            # Clamp into [0, 1] for the progress bar (some metrics can exceed 1)
-            clamped = max(0.0, min(1.0, float(score)))
-
+            # Color code based on score
+            if score >= 0.8:
+                color = "green"
+            elif score >= 0.6:
+                color = "orange"
+            else:
+                color = "red"
+            
             st.sidebar.metric(
                 label=metric_name.replace('_', ' ').title(),
                 value=f"{score:.3f}",
-                delta=None,
+                delta=None
             )
-
-            # Add progress bar (always a valid float in [0, 1])
-            st.sidebar.progress(clamped)
+            
+            # Add progress bar
+            st.sidebar.progress(score)
 
 def main():
     st.title("🚀 NASA Space Mission Chat with Evaluation")
