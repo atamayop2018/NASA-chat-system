@@ -1,0 +1,4 @@
+qid,question,answer_relevancy,faithfulness,llm_context_precision_without_reference
+Q1,What problems did Apollo 13 encounter during its mission?,0.9583449067010161,0.16666666666666666,0.8333333332916666
+Q2,Summarize the key communications during the Apollo 11 lunar descent and landing.,0.8943709881306953,0.5555555555555556,0.9999999999666667
+Q3,What were the final voice transmissions from the Challenger STS-51L crew?,0.8644404201861925,0.0,0.5833333333041666

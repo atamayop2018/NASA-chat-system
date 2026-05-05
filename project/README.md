@@ -24,13 +24,15 @@ By completing this project, students will learn to:
 
 ```
 /
-├── chat.py                 # Main Streamlit chat application (TODO-based)
-├── embedding_pipeline.py   # ChromaDB embedding pipeline (TODO-based)
-├── llm_client.py           # OpenAI LLM client wrapper (TODO-based)
-├── rag_client.py           # RAG system client (TODO-based)
-├── ragas_evaluator.py      # RAGAS evaluation metrics (TODO-based)
+├── chat.py                 # Main Streamlit chat application
+├── embedding_pipeline.py   # ChromaDB embedding pipeline
+├── llm_client.py           # OpenAI LLM client wrapper
+├── rag_client.py           # RAG system client
+├── ragas_evaluator.py      # RAGAS evaluation metrics (per-query + batch)
+├── batch_evaluate.py       # End-to-end batch evaluation runner (CLI)
+├── evaluation_dataset.txt  # 10-question test set used by batch_evaluate.py
 ├── requirements.txt        # Python dependencies
-└── README.md              # This file
+└── README.md               # This file
 ```
 
 ## 🚀 Getting Started
@@ -159,6 +161,10 @@ Each file contains strategically placed TODO comments that guide you through:
 - Use small datasets for initial testing
 - Verify API connections before processing large batches
 - Test edge cases (empty files, network errors, invalid inputs)
+- Use the curated 10-question test set in
+  [`evaluation_dataset.txt`](evaluation_dataset.txt) to verify system
+  performance — see [Batch Evaluation](#-batch-evaluation-with-evaluation_datasettxt)
+  below.
 
 ## 📊 Data Requirements
 
@@ -216,11 +222,49 @@ data/
 1. **Run the complete pipeline**:
    ```bash
    # Process documents
-   python embedding_pipeline.py --openai-key YOUR_KEY --data-path ./data
+   python embedding_pipeline.py --openai-key YOUR_KEY --data-path ./data_text
    
    # Launch chat interface
    streamlit run chat.py
    ```
+
+## 📋 Batch Evaluation with `evaluation_dataset.txt`
+
+The repository ships with a curated 10-question test set at
+[`evaluation_dataset.txt`](evaluation_dataset.txt) covering every required
+category — **overview** (Q10), **emergency / disaster** (Q1, Q3), **crew /
+communications** (Q2, Q5), **technical** (Q6, Q7), **timeline** (Q4), plus
+**negative** (Q8) and **out-of-scope** (Q9) tests. Each entry includes the
+question, the expected grounded answer, and the expected mission tag /
+document categories the retriever should surface.
+
+### Running the full batch
+
+```bash
+python batch_evaluate.py
+```
+
+[`batch_evaluate.py`](batch_evaluate.py) will:
+
+1. Parse all 10 questions from `evaluation_dataset.txt`.
+2. Run each question through the full **retrieve → format context → LLM**
+   pipeline (`rag_client` + `llm_client`).
+3. Call RAGAS [`evaluate()`](ragas_evaluator.py) **once** over the full
+   `EvaluationDataset` (response relevancy, faithfulness, LLM context
+   precision).
+4. Print a per-question table and an aggregate-mean summary, then write
+   `batch_report.json` and `batch_report.csv` for grading.
+
+Useful flags: `--limit 3` (run only the first three questions while
+iterating), `--k 5` (change retrieval depth), `--model gpt-4`,
+`--dataset path/to/other_questions.txt`.
+
+### Using the test set inside the chat UI
+
+You can also paste any of the questions from `evaluation_dataset.txt`
+directly into the Streamlit chat box — the live RAGAS sidebar will then
+show per-turn scores and you can compare them against the *Expected
+answer* block in the dataset for manual verification.
 
 ## 🎓 Learning Checkpoints
 
@@ -331,7 +375,11 @@ When submitting your completed project:
 2. Test the complete workflow end-to-end
 3. Include a brief report on challenges faced and solutions found
 4. Document any additional features or improvements you added
-5. Provide sample queries and expected responses
+5. Provide sample queries and expected responses — the canonical 10-question
+   test set lives in [`evaluation_dataset.txt`](evaluation_dataset.txt) and
+   can be exercised end-to-end by running
+   `python batch_evaluate.py` (which produces `batch_report.json` /
+   `batch_report.csv` summarising per-question and aggregate RAGAS scores).
 
 ---
 

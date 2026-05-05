@@ -1,0 +1,50 @@
+{
+  "config": {
+    "dataset": "/Users/alexitamayo/Documents/Udacity/NASA-chat-system/project/evaluation_dataset.txt",
+    "chroma_dir": "/Users/alexitamayo/Documents/Udacity/NASA-chat-system/project/chroma_db_openai",
+    "collection_name": "nasa_space_missions_text",
+    "k": 3,
+    "model": "gpt-3.5-turbo",
+    "openai_base_url": "https://openai.vocareum.com/v1"
+  },
+  "aggregate": {
+    "answer_relevancy": 0.9057187716726346,
+    "faithfulness": 0.24074074074074073,
+    "llm_context_precision_without_reference": 0.8055555555208332
+  },
+  "per_question": [
+    {
+      "qid": "Q1",
+      "question": "What problems did Apollo 13 encounter during its mission?",
+      "answer": "Apollo 13 encountered multiple issues during its mission, including a critical oxygen tank explosion that led to the mission being aborted. This explosion caused a loss of electrical power, water supply, and cabin heat, putting the crew in a life-threatening situation. Additionally, they faced challenges with high levels of carbon dioxide in the spacecraft and had to navigate a safe return trajectory back to Earth using the lunar module as a lifeboat.",
+      "n_contexts": 3,
+      "scores": {
+        "answer_relevancy": 0.9583449067010161,
+        "faithfulness": 0.16666666666666666,
+        "llm_context_precision_without_reference": 0.8333333332916666
+      }
+    },
+    {
+      "qid": "Q2",
+      "question": "Summarize the key communications during the Apollo 11 lunar descent and landing.",
+      "answer": "During the Apollo 11 lunar descent and landing, key communications included requests for a summary of the evening news from Houston to Apollo 11, flight plan updates such as deleting the O2 fuel cell purge, effective interfaces between Mission Control and the flight crew, assessment of the lunar module guidance computer overload, and live television coverage of the Commander's descent to the lunar surface, including the collection of contingency lunar material samples, deployment of the television camera, raising of the American flag, and deployment of the solar wind experiment for later retrieval.",
+      "n_contexts": 3,
+      "scores": {
+        "answer_relevancy": 0.8943709881306953,
+        "faithfulness": 0.5555555555555556,
+        "llm_context_precision_without_reference": 0.9999999999666667
+      }
+    },
+    {
+      "qid": "Q3",
+      "question": "What were the final voice transmissions from the Challenger STS-51L crew?",
+      "answer": "The final voice transmissions from the Challenger STS-51L crew were not captured in the provided NASA document transcripts. The last recorded transmissions were related to the search efforts after the Challenger disaster, confirming that no evidence was found indicating the crew's survival.",
+      "n_contexts": 3,
+      "scores": {
+        "answer_relevancy": 0.8644404201861925,
+        "faithfulness": 0.0,
+        "llm_context_precision_without_reference": 0.5833333333041666
+      }
+    }
+  ]
+}
