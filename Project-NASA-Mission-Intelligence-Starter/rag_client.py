@@ -1,79 +1,137 @@
 import chromadb
 from chromadb.config import Settings
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from pathlib import Path
+
 
 def discover_chroma_backends() -> Dict[str, Dict[str, str]]:
     """Discover available ChromaDB backends in the project directory"""
-    backends = {}
+    backends: Dict[str, Dict[str, str]] = {}
     current_dir = Path(".")
-    
-    # Look for ChromaDB directories
-    # TODO: Create list of directories that match specific criteria (directory type and name pattern)
 
-    # TODO: Loop through each discovered directory
-        # TODO: Wrap connection attempt in try-except block for error handling
-        
-            # TODO: Initialize database client with directory path and configuration settings
-            
-            # TODO: Retrieve list of available collections from the database
-            
-            # TODO: Loop through each collection found
-                # TODO: Create unique identifier key combining directory and collection names
-                # TODO: Build information dictionary containing:
-                    # TODO: Store directory path as string
-                    # TODO: Store collection name
-                    # TODO: Create user-friendly display name
-                    # TODO: Get document count with fallback for unsupported operations
-                # TODO: Add collection information to backends dictionary
-        
-        # TODO: Handle connection or access errors gracefully
-            # TODO: Create fallback entry for inaccessible directories
-            # TODO: Include error information in display name with truncation
-            # TODO: Set appropriate fallback values for missing information
+    # Look for ChromaDB directories matching common naming patterns
+    candidate_dirs = [
+        d for d in current_dir.iterdir()
+        if d.is_dir() and (
+            d.name.startswith("chroma_db") or d.name.startswith("chromadb")
+        )
+    ]
 
-    # TODO: Return complete backends dictionary with all discovered collections
+    # Loop through each discovered directory
+    for chroma_dir in candidate_dirs:
+        try:
+            # Initialize a ChromaDB client pointing at this directory
+            client = chromadb.PersistentClient(
+                path=str(chroma_dir),
+                settings=Settings(anonymized_telemetry=False),
+            )
 
-def initialize_rag_system(chroma_dir: str, collection_name: str):
-    """Initialize the RAG system with specified backend (cached for performance)"""
+            # Retrieve list of available collections
+            collections = client.list_collections()
 
-    # TODO: Create a chomadb persistentclient
-    # TODO: Return the collection with the collection_name
+            # Loop through each collection
+            for collection in collections:
+                # Some chromadb versions return objects, others return strings
+                col_name = getattr(collection, "name", collection)
 
-def retrieve_documents(collection, query: str, n_results: int = 3, 
+                # Unique key combining directory and collection name
+                backend_key = f"{chroma_dir.name}::{col_name}"
+
+                # Try to get the document count
+                try:
+                    col_obj = client.get_collection(name=col_name)
+                    doc_count = col_obj.count()
+                except Exception:
+                    doc_count = "unknown"
+
+                backends[backend_key] = {
+                    "directory": str(chroma_dir),
+                    "collection_name": col_name,
+                    "display_name": f"{chroma_dir.name} / {col_name} ({doc_count} docs)",
+                    "document_count": str(doc_count),
+                }
+
+        except Exception as e:
+            # Fallback entry for inaccessible directories
+            err = str(e)
+            if len(err) > 80:
+                err = err[:77] + "..."
+            backends[f"{chroma_dir.name}::error"] = {
+                "directory": str(chroma_dir),
+                "collection_name": "",
+                "display_name": f"{chroma_dir.name} (error: {err})",
+                "document_count": "0",
+            }
+
+    return backends
+
+
+def initialize_rag_system(chroma_dir: str, collection_name: str) -> Tuple[object, bool, str]:
+    """Initialize the RAG system with the specified backend.
+
+    Returns a tuple of (collection, success, error_message).
+    """
+    try:
+        client = chromadb.PersistentClient(
+            path=chroma_dir,
+            settings=Settings(anonymized_telemetry=False),
+        )
+        collection = client.get_collection(name=collection_name)
+        return collection, True, ""
+    except Exception as e:
+        return None, False, str(e)
+
+
+def retrieve_documents(collection, query: str, n_results: int = 3,
                       mission_filter: Optional[str] = None) -> Optional[Dict]:
     """Retrieve relevant documents from ChromaDB with optional filtering"""
 
-    # TODO: Initialize filter variable to None (represents no filtering)
+    # Initialize filter to None (no filtering)
+    where_filter = None
 
-    # TODO: Check if filter parameter exists and is not set to "all" or equivalent
-    # TODO: If filter conditions are met, create filter dictionary with appropriate field-value pairs
+    # Apply a mission filter if one was provided and isn't a wildcard
+    if mission_filter and mission_filter.lower() not in ("all", "any", ""):
+        where_filter = {"mission": mission_filter}
 
-    # TODO: Execute database query with the following parameters:
-        # TODO: Pass search query in the required format
-        # TODO: Set maximum number of results to return
-        # TODO: Apply conditional filter (None for no filtering, dictionary for specific filtering)
+    # Execute the query
+    results = collection.query(
+        query_texts=[query],
+        n_results=n_results,
+        where=where_filter,
+    )
 
-    # TODO: Return query results to caller
+    return results
+
 
 def format_context(documents: List[str], metadatas: List[Dict]) -> str:
     """Format retrieved documents into context"""
     if not documents:
         return ""
-    
-    # TODO: Initialize list with header text for context section
 
-    # TODO: Loop through paired documents and their metadata using enumeration
-        # TODO: Extract mission information from metadata with fallback value
-        # TODO: Clean up mission name formatting (replace underscores, capitalize)
-        # TODO: Extract source information from metadata with fallback value  
-        # TODO: Extract category information from metadata with fallback value
-        # TODO: Clean up category name formatting (replace underscores, capitalize)
-        
-        # TODO: Create formatted source header with index number and extracted information
-        # TODO: Add source header to context parts list
-        
-        # TODO: Check document length and truncate if necessary
-        # TODO: Add truncated or full document content to context parts list
+    context_parts: List[str] = ["Retrieved context from NASA archives:"]
 
-    # TODO: Join all context parts with newlines and return formatted string
+    for i, (doc, meta) in enumerate(zip(documents, metadatas or [])):
+        meta = meta or {}
+
+        # Mission
+        mission = meta.get("mission", "unknown")
+        mission_display = mission.replace("_", " ").title()
+
+        # Source
+        source = meta.get("source", "unknown source")
+
+        # Category
+        category = meta.get("document_category", "general")
+        category_display = category.replace("_", " ").title()
+
+        header = f"\n[Source {i + 1}] Mission: {mission_display} | Document: {source} | Category: {category_display}"
+        context_parts.append(header)
+
+        # Truncate very long chunks to keep context manageable
+        max_len = 1500
+        if doc and len(doc) > max_len:
+            context_parts.append(doc[:max_len] + "...")
+        else:
+            context_parts.append(doc or "")
+
+    return "\n".join(context_parts)
