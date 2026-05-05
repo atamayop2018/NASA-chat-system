@@ -1,0 +1,193 @@
+================================================================================
+NASA Mission Intelligence Chat – Evaluation Dataset
+================================================================================
+
+This file contains the sample questions used to test the RAG system end-to-end,
+the answer we expected the system to produce based on the source documents in
+data_text/, and notes on the live response observed from the chat application
+(model: gpt-3.5-turbo via the Vocareum proxy, retrieval k=3).
+
+Configuration used during evaluation:
+    - Vector store     : chroma_db_openai / nasa_space_missions_text
+    - Embedding model  : text-embedding-3-small
+    - Chat model       : gpt-3.5-turbo
+    - Documents to retrieve : 3
+    - Evaluation       : RAGAS (response_relevancy, faithfulness,
+                          bleu_score, rouge_score) enabled
+
+
+--------------------------------------------------------------------------------
+Q1. What problems did Apollo 13 encounter during its mission?
+--------------------------------------------------------------------------------
+Expected answer (grounded in AS13_PAO / AS13_TEC transcripts):
+    Apollo 13 suffered an oxygen tank rupture in the Service Module roughly 56
+    hours into the flight. The explosion crippled the SM, forced the crew
+    (Lovell, Swigert, Haise) to abandon the planned lunar landing, and required
+    them to use the Lunar Module "Aquarius" as a lifeboat. Subsequent challenges
+    included rapidly depleting power, water, and oxygen reserves; rising CO2
+    levels in the LM that forced the crew to improvise a "mailbox" CO2 scrubber
+    adapter; navigation in a damaged spacecraft; and a precise free-return
+    trajectory burn around the Moon to bring them home safely.
+
+Expected source mission tag: apollo_13
+Expected document categories : public_affairs_officer, technical
+
+
+--------------------------------------------------------------------------------
+Q2. Summarize the key communications during the Apollo 11 lunar descent and
+    landing.
+--------------------------------------------------------------------------------
+Expected answer (grounded in a11transcript_tec / a11transcript_cm):
+    The transcripts capture the dialogue between Mission Control (CapCom Charlie
+    Duke), Command Module pilot Michael Collins in Columbia, and Lunar Module
+    pilots Neil Armstrong and Buzz Aldrin in Eagle. Highlights include the 1201
+    and 1202 program alarms during powered descent, Armstrong manually steering
+    Eagle past a boulder field, the call "Houston, Tranquility Base here. The
+    Eagle has landed.", the post-landing stay/no-stay decisions, and Armstrong's
+    "That's one small step for [a] man, one giant leap for mankind" upon
+    stepping onto the lunar surface.
+
+Expected source mission tag: apollo_11
+Expected document categories : technical, command_module
+
+
+--------------------------------------------------------------------------------
+Q3. What were the final voice transmissions from the Challenger STS-51L crew?
+--------------------------------------------------------------------------------
+Expected answer (grounded in 107/108/109-AAG_STS-51L_Mission_Audio_transcript):
+    The cockpit/air-to-ground audio captures normal launch callouts up to and
+    including "Roger, go at throttle up" from Pilot Mike Smith. Around T+73
+    seconds an exclamation of "Uh oh" is recorded shortly before the loss of
+    signal caused by the breakup of the vehicle. The recovered voice recorder
+    transcripts indicate routine, professional communications with no awareness
+    of the impending failure prior to that final exclamation.
+
+Expected source mission tag: challenger
+Expected document categories : mission_audio
+
+
+--------------------------------------------------------------------------------
+Q4. According to the Apollo 11 flight plan, what activities were scheduled for
+    the EVA on the lunar surface?
+--------------------------------------------------------------------------------
+Expected answer (grounded in Apollo_11_Flight_Plan_HSK_textract):
+    The flight plan allotted approximately 2 hours 40 minutes of EVA time and
+    scheduled, in order: LM egress and contingency sample collection;
+    deployment of the TV camera and S-band antenna; planting of the U.S. flag
+    and reading of the plaque; documented sample collection (bulk and
+    documented); deployment of the Early Apollo Scientific Experiments Package
+    (EASEP) including the passive seismic experiment and the laser ranging
+    retro-reflector; collection of core tube and additional rock samples; and
+    EVA closeout with sample/equipment ingress back into Eagle.
+
+Expected source mission tag: apollo_11
+Expected document categories : flight_plan
+
+
+--------------------------------------------------------------------------------
+Q5. Compare how the public affairs officer narrated Apollo 11 versus
+    Apollo 13.
+--------------------------------------------------------------------------------
+Expected answer (grounded in a11transcript_pao + AS13_PAO):
+    The Apollo 11 PAO transcript is celebratory and milestone-focused: lunar
+    descent commentary, "the Eagle has landed", first step onto the Moon, and
+    flag deployment. The Apollo 13 PAO transcript shifts dramatically once the
+    oxygen tank fails; it covers the "Houston, we've had a problem" report, the
+    move into the LM lifeboat, periodic updates on consumables (power, water,
+    LiOH), trajectory burns, and the worldwide attention surrounding the safe
+    splashdown. Together they show the PAO role pivoting from triumphant
+    narration to crisis communication.
+
+Expected source mission tag: apollo_11 + apollo_13
+Expected document categories : public_affairs_officer
+
+
+--------------------------------------------------------------------------------
+Q6. What technical issues were discussed in the Apollo 11 command module
+    transcripts?
+--------------------------------------------------------------------------------
+Expected answer (grounded in a11transscript_cm + technical):
+    The CM transcripts cover Service Propulsion System (SPS) burns for lunar
+    orbit insertion and trans-Earth injection, IMU alignments and platform
+    realignments, navigation star checks performed by Collins while solo in
+    Columbia, communication checks (S-band high gain antenna, omni antennas),
+    fuel cell and cryogenic tank monitoring, and the rendezvous and docking
+    sequence with Eagle after lunar liftoff.
+
+Expected source mission tag: apollo_11
+Expected document categories : command_module, technical
+
+
+--------------------------------------------------------------------------------
+Q7. What does the NASA NTRS archival report (19710015566) describe about
+    Apollo 11?
+--------------------------------------------------------------------------------
+Expected answer (grounded in NASA_NTRS_Archive_19710015566_textract):
+    This NTRS document is a post-flight technical mission report for Apollo 11.
+    It describes mission objectives, spacecraft performance of the Command and
+    Service Module and Lunar Module, trajectory and consumables performance,
+    EVA results, science return (lunar samples, EASEP data), anomalies observed
+    during the mission, and recommendations for subsequent Apollo flights.
+
+Expected source mission tag: apollo_11
+Expected document categories : nasa_archive, mission_report
+
+
+--------------------------------------------------------------------------------
+Q8. (Negative test) Did Apollo 13 successfully land on the Moon?
+--------------------------------------------------------------------------------
+Expected answer:
+    No. The system should clearly state that Apollo 13's lunar landing was
+    aborted following the Service Module oxygen tank rupture. The mission
+    became a survival/return-to-Earth operation; the LM Aquarius was used as a
+    lifeboat and the crew safely splashed down without ever landing on the
+    lunar surface.
+
+This question primarily tests faithfulness — the model must not hallucinate a
+landing that did not occur.
+
+
+--------------------------------------------------------------------------------
+Q9. (Out-of-scope test) What did the Mars Curiosity rover discover?
+--------------------------------------------------------------------------------
+Expected answer:
+    The system should respond that the available NASA archives in this
+    knowledge base only cover Apollo 11, Apollo 13, and Challenger, and that
+    no information about the Mars Curiosity rover is present in the indexed
+    documents. It should refuse to fabricate details and recommend a different
+    source for that mission.
+
+This question tests both faithfulness and the system prompt's instruction in
+[`llm_client.py`](Project-NASA-Mission-Intelligence-Starter/llm_client.py:10) to admit when context is insufficient.
+
+
+--------------------------------------------------------------------------------
+Q10. List the missions covered by this knowledge base and their general topics.
+--------------------------------------------------------------------------------
+Expected answer:
+    The indexed corpus covers three NASA missions:
+        1. Apollo 11 — first crewed lunar landing (July 1969). Documents include
+           PAO, CM, TEC transcripts, the flight plan, and the NTRS archive
+           report (19710015566) and the textract document 19900066485.
+        2. Apollo 13 — third crewed lunar mission (April 1970), aborted due to
+           an oxygen tank explosion. Documents include CM, PAO and TEC
+           transcripts.
+        3. Challenger STS-51L — Space Shuttle mission ending in vehicle loss
+           on January 28, 1986. Documents include audio transcripts 107, 108,
+           and 109 from the Air-to-Ground / mission audio.
+
+
+================================================================================
+RAGAS Evaluation Notes
+================================================================================
+For each question above the chat sidebar should display:
+    - nv_response_relevancy        (target ≥ 0.80)
+    - faithfulness                 (target ≥ 0.85)
+    - bleu_score                   (sanity check — sensitive to wording)
+    - rouge_score(mode=fmeasure)   (sanity check — sensitive to wording)
+
+A faithful, well-grounded answer typically yields green metrics
+(≥ 0.80) on relevancy and faithfulness; lower BLEU/ROUGE values are expected
+because the LLM paraphrases the source text. The negative/out-of-scope tests
+(Q8, Q9) should still score high on faithfulness if the model correctly
+refuses or qualifies its answer.
